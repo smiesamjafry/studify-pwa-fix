@@ -14,28 +14,39 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <style>
-    /* ============================================================
-       PWA SAFE AREA FIX - Toggle these styles to test the fix
-       ============================================================ */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-    /* --- BROKEN VERSION (comment this block out to see the fix) ---
-    html, body {
-      min-height: 100vh;
+    /* === FIX 1: Prevent elastic bounce/overscroll === */
+    html {
+      height: 100%;
+      overflow: hidden;
+      position: fixed;
+      width: 100%;
     }
-    */
-
-    /* --- FIXED VERSION --- */
-    html, body, #app {
-      min-height: 100dvh;
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      height: 100%;
+      overflow: hidden;
+      position: fixed;
+      width: 100%;
       background-color: #f5f5f5;
     }
+    #app {
+      height: 100%;
+      overflow: hidden;
+    }
 
-    /* The key fix: bottom nav extends into safe area */
+    /* === FIX 3: Ensure correct height from first paint === */
+    html, body, #app {
+      min-height: 100dvh;
+      min-height: -webkit-fill-available;
+    }
+
+    /* Bottom nav extends into safe area */
     .bottom-nav {
       padding-bottom: env(safe-area-inset-bottom, 0px);
     }
 
-    /* For standalone PWA mode */
     @media (display-mode: standalone) {
       .bottom-nav {
         padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -45,18 +56,19 @@
       }
     }
 
-    /* Safe area top padding */
     .safe-top {
       padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
     }
 
-    /* ============================================================ */
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-
-    .screen { display: none; flex-direction: column; min-height: 100dvh; }
-    .screen.active { display: flex; }
+    .screen {
+      display: none;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+    .screen.active {
+      display: flex;
+    }
 
     .bottom-nav {
       position: fixed;
@@ -83,6 +95,7 @@
       color: #9ca3af;
       cursor: pointer;
       padding: 4px 8px;
+      -webkit-tap-highlight-color: transparent;
     }
     .bottom-nav button.active {
       color: #33bfff;
@@ -91,9 +104,31 @@
       font-size: 20px;
     }
 
+    /* === Scrollable content area only === */
     .page-content {
       flex: 1;
-      padding-bottom: 70px; /* space for bottom nav */
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: none;
+      padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* === FIX 2: iOS-style back button === */
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      color: #33bfff;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .back-btn i {
+      font-size: 18px;
     }
 
     .calendar-strip {
@@ -102,6 +137,7 @@
       overflow-x: auto;
       padding: 0 16px;
       scrollbar-width: none;
+      overscroll-behavior-x: none;
     }
     .calendar-strip::-webkit-scrollbar { display: none; }
 
@@ -151,6 +187,7 @@
       font-size: 16px;
       font-weight: 600;
       cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
     }
     .btn-primary:active {
       background: #1eaae6;
@@ -169,7 +206,7 @@
       background: #f3f4f6;
       border-radius: 12px;
       padding: 4px;
-      margin: 0 16px 16px;
+      margin: 0 0 16px;
     }
     .tab-bar button {
       flex: 1;
@@ -181,6 +218,7 @@
       font-weight: 500;
       color: #6b7280;
       cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
     }
     .tab-bar button.active {
       background: white;
@@ -208,52 +246,62 @@
       font-weight: 600;
       font-size: 16px;
     }
+
+    /* Login screen scrollable area */
+    .login-scroll {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: none;
+    }
   </style>
 </head>
-<body style="background-color:#f5f5f5">
+<body>
   <div id="app">
 
     <!-- ==================== LOGIN SCREEN ==================== -->
     <div id="screen-login" class="screen active page-without-nav">
-      <div class="safe-top" style="background: linear-gradient(135deg, #33bfff 0%, #1e90ff 100%); padding: 40px 24px 60px; text-align: center; border-radius: 0 0 32px 32px;">
-        <div style="width: 64px; height: 64px; background: white; border-radius: 16px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
-          <span style="font-size: 28px; color: #33bfff; font-weight: 700;">S</span>
+      <div class="login-scroll">
+        <div class="safe-top" style="background: linear-gradient(135deg, #33bfff 0%, #1e90ff 100%); padding: 40px 24px 60px; text-align: center; border-radius: 0 0 32px 32px;">
+          <div style="width: 64px; height: 64px; background: white; border-radius: 16px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
+            <span style="font-size: 28px; color: #33bfff; font-weight: 700;">S</span>
+          </div>
+          <h1 style="color: white; font-size: 28px; font-weight: 700;">Studify</h1>
+          <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin-top: 4px;">Your personalized study companion</p>
         </div>
-        <h1 style="color: white; font-size: 28px; font-weight: 700;">Studify</h1>
-        <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin-top: 4px;">Your personalized study companion</p>
-      </div>
-      <div style="padding: 32px 24px;">
-        <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 4px;">Welcome back!</h2>
-        <p style="color: #6b7280; font-size: 14px; margin-bottom: 24px;">Sign in to continue learning</p>
-        <div>
-          <label style="font-size: 13px; font-weight: 500; color: #374151; display: block; margin-bottom: 6px;">Email</label>
-          <input type="email" id="login-email" placeholder="Enter your email" value="superadmin@studify.com" />
+        <div style="padding: 32px 24px;">
+          <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 4px;">Welcome back!</h2>
+          <p style="color: #6b7280; font-size: 14px; margin-bottom: 24px;">Sign in to continue learning</p>
+          <div>
+            <label style="font-size: 13px; font-weight: 500; color: #374151; display: block; margin-bottom: 6px;">Email</label>
+            <input type="email" id="login-email" placeholder="Enter your email" value="superadmin@studify.com" />
+          </div>
+          <div>
+            <label style="font-size: 13px; font-weight: 500; color: #374151; display: block; margin-bottom: 6px;">Password</label>
+            <input type="password" id="login-password" placeholder="Enter your password" value="AdminStudify.1" />
+          </div>
+          <div style="text-align: right; margin-bottom: 20px;">
+            <a href="#" style="font-size: 13px; color: #33bfff; text-decoration: none;">Forgot password?</a>
+          </div>
+          <button class="btn-primary" onclick="login()">Sign In</button>
+          <p style="text-align: center; margin-top: 20px; font-size: 13px; color: #6b7280;">
+            Don't have an account? <a href="#" style="color: #33bfff; text-decoration: none; font-weight: 600;">Sign Up</a>
+          </p>
         </div>
-        <div>
-          <label style="font-size: 13px; font-weight: 500; color: #374151; display: block; margin-bottom: 6px;">Password</label>
-          <input type="password" id="login-password" placeholder="Enter your password" value="AdminStudify.1" />
-        </div>
-        <div style="text-align: right; margin-bottom: 20px;">
-          <a href="#" style="font-size: 13px; color: #33bfff; text-decoration: none;">Forgot password?</a>
-        </div>
-        <button class="btn-primary" onclick="login()">Sign In</button>
-        <p style="text-align: center; margin-top: 20px; font-size: 13px; color: #6b7280;">
-          Don't have an account? <a href="#" style="color: #33bfff; text-decoration: none; font-weight: 600;">Sign Up</a>
-        </p>
       </div>
     </div>
 
     <!-- ==================== HOME SCREEN ==================== -->
     <div id="screen-home" class="screen">
       <div class="safe-top" style="background: white; padding: 16px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
           <div style="display: flex; align-items: center; gap: 12px;">
             <div style="width: 36px; height: 36px; background: #33bfff; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
               <span style="color: white; font-weight: 700; font-size: 14px;">S</span>
             </div>
             <h2 style="font-size: 18px; font-weight: 600;">Hi Super 👋</h2>
           </div>
-          <button style="background: none; border: none; font-size: 20px; color: #374151; cursor: pointer;">
+          <button style="background: none; border: none; font-size: 20px; color: #374151; cursor: pointer; -webkit-tap-highlight-color: transparent;">
             <i class="fas fa-ellipsis-v"></i>
           </button>
         </div>
@@ -268,7 +316,7 @@
         <!-- Recent Study -->
         <div style="padding: 0 16px;">
           <h3 style="font-size: 16px; font-weight: 600; margin: 16px 0 12px;">Your recent study today</h3>
-          <div class="card" style="text-align: center; padding: 40px 20px;">
+          <div class="card" style="text-align: center; padding: 40px 20px; margin: 0;">
             <div style="font-size: 40px; margin-bottom: 12px;">🎯</div>
             <p style="font-weight: 600; font-size: 16px; color: #374151;">No activities for today</p>
             <p style="color: #9ca3af; font-size: 13px; margin-top: 4px;">Start studying to build your streak!</p>
@@ -276,9 +324,9 @@
         </div>
 
         <!-- Quick Actions -->
-        <div style="padding: 0 16px; margin-top: 8px;">
+        <div style="padding: 0 16px; margin-top: 16px;">
           <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px;">Quick Actions</h3>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding-bottom: 16px;">
             <div class="card" style="text-align: center; margin: 0; cursor: pointer;" onclick="navigate('flashcards')">
               <i class="fas fa-layer-group" style="font-size: 24px; color: #33bfff; margin-bottom: 8px;"></i>
               <p style="font-size: 13px; font-weight: 500;">Flashcards</p>
@@ -299,7 +347,7 @@
         </div>
       </div>
 
-      <nav class="bottom-nav" id="bottom-nav-home">
+      <nav class="bottom-nav">
         <button class="active" onclick="navigate('home')"><i class="fas fa-home"></i><span>Home</span></button>
         <button onclick="navigate('flashcards')"><i class="fas fa-layer-group"></i><span>Flashcards</span></button>
         <button onclick="navigate('qbank')"><i class="fas fa-question-circle"></i><span>QBank</span></button>
@@ -312,7 +360,10 @@
     <div id="screen-flashcards" class="screen">
       <div class="safe-top" style="background: white; padding: 16px;">
         <div style="display: flex; align-items: center; justify-content: space-between;">
-          <h2 style="font-size: 20px; font-weight: 700;">Flashcards</h2>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <button class="back-btn" onclick="navigate('home')"><i class="fas fa-chevron-left"></i></button>
+            <h2 style="font-size: 20px; font-weight: 700;">Flashcards</h2>
+          </div>
           <button style="background: #33bfff; color: white; border: none; border-radius: 10px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer;">
             <i class="fas fa-plus" style="margin-right: 4px;"></i> Create
           </button>
@@ -391,7 +442,10 @@
     <div id="screen-qbank" class="screen">
       <div class="safe-top" style="background: white; padding: 16px;">
         <div style="display: flex; align-items: center; justify-content: space-between;">
-          <h2 style="font-size: 20px; font-weight: 700;">Question Bank</h2>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <button class="back-btn" onclick="navigate('home')"><i class="fas fa-chevron-left"></i></button>
+            <h2 style="font-size: 20px; font-weight: 700;">Question Bank</h2>
+          </div>
           <button style="background: #33bfff; color: white; border: none; border-radius: 10px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer;">
             <i class="fas fa-play" style="margin-right: 4px;"></i> Start Quiz
           </button>
@@ -474,7 +528,10 @@
     <div id="screen-notebooks" class="screen">
       <div class="safe-top" style="background: white; padding: 16px;">
         <div style="display: flex; align-items: center; justify-content: space-between;">
-          <h2 style="font-size: 20px; font-weight: 700;">Notebooks</h2>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <button class="back-btn" onclick="navigate('home')"><i class="fas fa-chevron-left"></i></button>
+            <h2 style="font-size: 20px; font-weight: 700;">Notebooks</h2>
+          </div>
           <button style="background: #33bfff; color: white; border: none; border-radius: 10px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer;">
             <i class="fas fa-plus" style="margin-right: 4px;"></i> New
           </button>
@@ -549,7 +606,10 @@
     <div id="screen-community" class="screen">
       <div class="safe-top" style="background: white; padding: 16px;">
         <div style="display: flex; align-items: center; justify-content: space-between;">
-          <h2 style="font-size: 20px; font-weight: 700;">Community</h2>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <button class="back-btn" onclick="navigate('home')"><i class="fas fa-chevron-left"></i></button>
+            <h2 style="font-size: 20px; font-weight: 700;">Community</h2>
+          </div>
           <button style="background: #33bfff; color: white; border: none; border-radius: 10px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer;">
             <i class="fas fa-pen" style="margin-right: 4px;"></i> Post
           </button>
@@ -623,10 +683,22 @@
   </div>
 
   <script>
-    // Navigation
+    // Navigation with history tracking
+    let navHistory = ['login'];
+
     function navigate(screen) {
+      navHistory.push(screen);
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
       document.getElementById('screen-' + screen).classList.add('active');
+    }
+
+    function goBack() {
+      if (navHistory.length > 1) {
+        navHistory.pop();
+        const prev = navHistory[navHistory.length - 1];
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('screen-' + prev).classList.add('active');
+      }
     }
 
     // Login
@@ -656,12 +728,9 @@
         item.className = 'day-item' + (isToday ? ' today' : '');
 
         if (isPast) {
-          item.innerHTML = `<div class="streak-dot"></div>`;
+          item.innerHTML = '<div class="streak-dot"></div>';
         }
-        item.innerHTML += `
-          <span class="date">${d.getDate()}</span>
-          <span class="label">${days[d.getDay()]}</span>
-        `;
+        item.innerHTML += '<span class="date">' + d.getDate() + '</span><span class="label">' + days[d.getDay()] + '</span>';
         strip.appendChild(item);
       }
     }
@@ -672,6 +741,14 @@
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js');
     }
+
+    // Prevent overscroll/bounce on iOS
+    document.addEventListener('touchmove', function(e) {
+      const target = e.target.closest('.page-content, .login-scroll, .calendar-strip');
+      if (!target) {
+        e.preventDefault();
+      }
+    }, { passive: false });
   </script>
 </body>
 </html>
