@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Studify</title>
+  <meta name="description" content="Your personalized study companion" />
+  <meta name="theme-color" content="#33bfff" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Studify" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    /* ============================================================
+       PWA SAFE AREA FIX - Toggle these styles to test the fix
+       ============================================================ */
+
+    /* --- BROKEN VERSION (comment this block out to see the fix) ---
+    html, body {
+      min-height: 100vh;
+    }
+    */
+
+    /* --- FIXED VERSION --- */
+    html, body, #app {
+      min-height: 100dvh;
+      background-color: #f5f5f5;
+    }
+
+    /* The key fix: bottom nav extends into safe area */
+    .bottom-nav {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    /* For standalone PWA mode */
+    @media (display-mode: standalone) {
+      .bottom-nav {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      .page-without-nav {
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+    }
+
+    /* Safe area top padding */
+    .safe-top {
+      padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
+    }
+
+    /* ============================================================ */
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+
+    .screen { display: none; flex-direction: column; min-height: 100dvh; }
+    .screen.active { display: flex; }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-top: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding-top: 8px;
+      z-index: 50;
+    }
+
+    .bottom-nav button {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      background: none;
+      border: none;
+      font-size: 10px;
+      color: #9ca3af;
+      cursor: pointer;
+      padding: 4px 8px;
+    }
+    .bottom-nav button.active {
+      color: #33bfff;
+    }
+    .bottom-nav button i {
+      font-size: 20px;
+    }
+
+    .page-content {
+      flex: 1;
+      padding-bottom: 70px; /* space for bottom nav */
+    }
+
+    .calendar-strip {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 0 16px;
+      scrollbar-width: none;
+    }
+    .calendar-strip::-webkit-scrollbar { display: none; }
+
+    .day-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-width: 44px;
+      padding: 8px 4px;
+      border-radius: 12px;
+      font-size: 12px;
+    }
+    .day-item .date { font-size: 18px; font-weight: 600; }
+    .day-item .label { font-size: 10px; text-transform: uppercase; color: #9ca3af; }
+    .day-item.today { background: #33bfff; color: white; }
+    .day-item.today .label { color: white; }
+    .day-item .streak-dot { width: 6px; height: 6px; border-radius: 50%; background: #9ca3af; margin-bottom: 2px; }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 12px 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    input[type="email"], input[type="password"] {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      font-size: 16px;
+      outline: none;
+      margin-bottom: 12px;
+    }
+    input:focus {
+      border-color: #33bfff;
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      background: #33bfff;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-primary:active {
+      background: #1eaae6;
+    }
+
+    .deck-card {
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .tab-bar {
+      display: flex;
+      background: #f3f4f6;
+      border-radius: 12px;
+      padding: 4px;
+      margin: 0 16px 16px;
+    }
+    .tab-bar button {
+      flex: 1;
+      padding: 8px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      font-size: 13px;
+      font-weight: 500;
+      color: #6b7280;
+      cursor: pointer;
+    }
+    .tab-bar button.active {
+      background: white;
+      color: #111;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .community-post {
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    .avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #33bfff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body style="background-color:#f5f5f5">
+  <div id="app">
+
+    <!-- ==================== LOGIN SCREEN ==================== -->
+    <div id="screen-login" class="screen active page-without-nav">
+      <div class="safe-top" style="background: linear-gradient(135deg, #33bfff 0%, #1e90ff 100%); padding: 40px 24px 60px; text-align: center; border-radius: 0 0 32px 32px;">
+        <div style="width: 64px; height: 64px; background: white; border-radius: 16px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center;">
+          <span style="font-size: 28px; color: #33bfff; font-weight: 700;">S</span>
+        </div>
+        <h1 style="color: white; font-size: 28px; font-weight: 700;">Studify</h1>
+        <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin-top: 4px;">Your personalized study companion</p>
+      </div>
+      <div style="padding: 32px 24px;">
+        <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 4px;">Welcome back!</h2>
+        <p style="color: #6b7280; font-size: 14px; margin-bottom: 24px;">Sign in to continue learning</p>
+        <div>
+          <label style="font-size: 13px; font-weight: 500; color: #374151; display: block; margin-bottom: 6px;">Email</label>
+          <input type="email" id="login-email" placeholder="Enter your email" value="superadmin@studify.com" />
+        </div>
+        <div>
+          <label style="font-size: 13px; font-weight: 500; color: #374151; display: block; margin-bottom: 6px;">Password</label>
+          <input type="password" id="login-password" placeholder="Enter your password" value="AdminStudify.1" />
+        </div>
+        <div style="text-align: right; margin-bottom: 20px;">
+          <a href="#" style="font-size: 13px; color: #33bfff; text-decoration: none;">Forgot password?</a>
+        </div>
+        <button class="btn-primary" onclick="login()">Sign In</button>
+        <p style="text-align: center; margin-top: 20px; font-size: 13px; color: #6b7280;">
+          Don't have an account? <a href="#" style="color: #33bfff; text-decoration: none; font-weight: 600;">Sign Up</a>
+        </p>
+      </div>
+    </div>
+
+    <!-- ==================== HOME SCREEN ==================== -->
+    <div id="screen-home" class="screen">
+      <div class="safe-top" style="background: white; padding: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 36px; height: 36px; background: #33bfff; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+              <span style="color: white; font-weight: 700; font-size: 14px;">S</span>
+            </div>
+            <h2 style="font-size: 18px; font-weight: 600;">Hi Super 👋</h2>
+          </div>
+          <button style="background: none; border: none; font-size: 20px; color: #374151; cursor: pointer;">
+            <i class="fas fa-ellipsis-v"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="page-content" style="background: #f5f5f5;">
+        <!-- Calendar Strip -->
+        <div style="background: white; padding: 12px 0 16px; margin-bottom: 8px;">
+          <div class="calendar-strip" id="calendar-strip"></div>
+        </div>
+
+        <!-- Recent Study -->
+        <div style="padding: 0 16px;">
+          <h3 style="font-size: 16px; font-weight: 600; margin: 16px 0 12px;">Your recent study today</h3>
+          <div class="card" style="text-align: center; padding: 40px 20px;">
+            <div style="font-size: 40px; margin-bottom: 12px;">🎯</div>
+            <p style="font-weight: 600; font-size: 16px; color: #374151;">No activities for today</p>
+            <p style="color: #9ca3af; font-size: 13px; margin-top: 4px;">Start studying to build your streak!</p>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div style="padding: 0 16px; margin-top: 8px;">
+          <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px;">Quick Actions</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="card" style="text-align: center; margin: 0; cursor: pointer;" onclick="navigate('flashcards')">
+              <i class="fas fa-layer-group" style="font-size: 24px; color: #33bfff; margin-bottom: 8px;"></i>
+              <p style="font-size: 13px; font-weight: 500;">Flashcards</p>
+            </div>
+            <div class="card" style="text-align: center; margin: 0; cursor: pointer;" onclick="navigate('qbank')">
+              <i class="fas fa-question-circle" style="font-size: 24px; color: #f59e0b; margin-bottom: 8px;"></i>
+              <p style="font-size: 13px; font-weight: 500;">QBank</p>
+            </div>
+            <div class="card" style="text-align: center; margin: 0; cursor: pointer;" onclick="navigate('notebooks')">
+              <i class="fas fa-book-open" style="font-size: 24px; color: #10b981; margin-bottom: 8px;"></i>
+              <p style="font-size: 13px; font-weight: 500;">Notebooks</p>
+            </div>
+            <div class="card" style="text-align: center; margin: 0; cursor: pointer;" onclick="navigate('community')">
+              <i class="fas fa-users" style="font-size: 24px; color: #8b5cf6; margin-bottom: 8px;"></i>
+              <p style="font-size: 13px; font-weight: 500;">Community</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <nav class="bottom-nav" id="bottom-nav-home">
+        <button class="active" onclick="navigate('home')"><i class="fas fa-home"></i><span>Home</span></button>
+        <button onclick="navigate('flashcards')"><i class="fas fa-layer-group"></i><span>Flashcards</span></button>
+        <button onclick="navigate('qbank')"><i class="fas fa-question-circle"></i><span>QBank</span></button>
+        <button onclick="navigate('notebooks')"><i class="fas fa-book-open"></i><span>Notebooks</span></button>
+        <button onclick="navigate('community')"><i class="fas fa-users"></i><span>Community</span></button>
+      </nav>
+    </div>
+
+    <!-- ==================== FLASHCARDS SCREEN ==================== -->
+    <div id="screen-flashcards" class="screen">
+      <div class="safe-top" style="background: white; padding: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <h2 style="font-size: 20px; font-weight: 700;">Flashcards</h2>
+          <button style="background: #33bfff; color: white; border: none; border-radius: 10px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer;">
+            <i class="fas fa-plus" style="margin-right: 4px;"></i> Create
+          </button>
+        </div>
+      </div>
+      <div class="page-content" style="background: #f5f5f5; padding: 16px;">
+        <div class="tab-bar">
+          <button class="active">My Decks</button>
+          <button>Shared</button>
+          <button>Favorites</button>
+        </div>
+
+        <div class="deck-card">
+          <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div>
+              <h4 style="font-weight: 600; font-size: 15px;">Biology - Cell Structure</h4>
+              <p style="color: #9ca3af; font-size: 12px; margin-top: 4px;">24 cards · Last studied 2 days ago</p>
+            </div>
+            <span style="background: #dcfce7; color: #16a34a; font-size: 11px; padding: 4px 8px; border-radius: 6px; font-weight: 500;">85%</span>
+          </div>
+          <div style="background: #f3f4f6; border-radius: 8px; height: 6px; margin-top: 12px;">
+            <div style="background: #33bfff; border-radius: 8px; height: 6px; width: 85%;"></div>
+          </div>
+        </div>
+
+        <div class="deck-card">
+          <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div>
+              <h4 style="font-weight: 600; font-size: 15px;">Chemistry - Periodic Table</h4>
+              <p style="color: #9ca3af; font-size: 12px; margin-top: 4px;">48 cards · Last studied today</p>
+            </div>
+            <span style="background: #fef3c7; color: #d97706; font-size: 11px; padding: 4px 8px; border-radius: 6px; font-weight: 500;">62%</span>
+          </div>
+          <div style="background: #f3f4f6; border-radius: 8px; height: 6px; margin-top: 12px;">
+            <div style="background: #f59e0b; border-radius: 8px; height: 6px; width: 62%;"></div>
+          </div>
+        </div>
+
+        <div class="deck-card">
+          <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div>
+              <h4 style="font-weight: 600; font-size: 15px;">Physics - Mechanics</h4>
+              <p style="color: #9ca3af; font-size: 12px; margin-top: 4px;">36 cards · Last studied 5 days ago</p>
+            </div>
+            <span style="background: #fee2e2; color: #dc2626; font-size: 11px; padding: 4px 8px; border-radius: 6px; font-weight: 500;">41%</span>
+          </div>
+          <div style="background: #f3f4f6; border-radius: 8px; height: 6px; margin-top: 12px;">
+            <div style="background: #ef4444; border-radius: 8px; height: 6px; width: 41%;"></div>
+          </div>
+        </div>
+
+        <div class="deck-card">
+          <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div>
+              <h4 style="font-weight: 600; font-size: 15px;">Math - Calculus</h4>
+              <p style="color: #9ca3af; font-size: 12px; margin-top: 4px;">52 cards · New deck</p>
+            </div>
+            <span style="background: #f3f4f6; color: #9ca3af; font-size: 11px; padding: 4px 8px; border-radius: 6px; font-weight: 500;">0%</span>
+          </div>
+          <div style="background: #f3f4f6; border-radius: 8px; height: 6px; margin-top: 12px;">
+            <div style="background: #9ca3af; border-radius: 8px; height: 6px; width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <nav class="bottom-nav">
+        <button onclick="navigate('home')"><i class="fas fa-home"></i><span>Home</span></button>
+        <button class="active" onclick="navigate('flashcards')"><i class="fas fa-layer-group"></i><span>Flashcards</span></button>
+        <button onclick="navigate('qbank')"><i class="fas fa-question-circle"></i><span>QBank</span></button>
+        <button onclick="navigate('notebooks')"><i class="fas fa-book-open"></i><span>Notebooks</span></button>
+        <button onclick="navigate('community')"><i class="fas fa-users"></i><span>Community</span></button>
+      </nav>
+    </div>
+
+    <!-- ==================== QBANK SCREEN ==================== -->
+    <div id="screen-qbank" class="screen">
+      <div class="safe-top" style="background: white; padding: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <h2 style="font-size: 20px; font-weight: 700;">Question Bank</h2>
+          <button style="background: #33bfff; color: white; border: none; border-radius: 10px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer;">
+            <i class="fas fa-play" style="margin-right: 4px;"></i> Start Quiz
+          </button>
+        </div>
+      </div>
+      <div class="page-content" style="background: #f5f5f5; padding: 16px;">
+        <div class="tab-bar">
+          <button class="active">Build</button>
+          <button>Previous</button>
+          <button>Performance</button>
+          <button>Notes</button>
+        </div>
+
+        <!-- Stats -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+          <div class="card" style="text-align: center; margin: 0; padding: 14px;">
+            <p style="font-size: 22px; font-weight: 700; color: #33bfff;">248</p>
+            <p style="font-size: 11px; color: #9ca3af;">Questions</p>
+          </div>
+          <div class="card" style="text-align: center; margin: 0; padding: 14px;">
+            <p style="font-size: 22px; font-weight: 700; color: #10b981;">72%</p>
+            <p style="font-size: 11px; color: #9ca3af;">Avg Score</p>
+          </div>
+          <div class="card" style="text-align: center; margin: 0; padding: 14px;">
+            <p style="font-size: 22px; font-weight: 700; color: #f59e0b;">15</p>
+            <p style="font-size: 11px; color: #9ca3af;">Quizzes</p>
+          </div>
+        </div>
+
+        <!-- Subject filters -->
+        <h3 style="font-size: 15px; font-weight: 600; margin-bottom: 12px;">Select Subject</h3>
+        <div class="card" style="margin: 0 0 12px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 40px; height: 40px; background: #dbeafe; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+              <i class="fas fa-dna" style="color: #3b82f6;"></i>
+            </div>
+            <div style="flex: 1;">
+              <p style="font-weight: 600; font-size: 14px;">Biology</p>
+              <p style="color: #9ca3af; font-size: 12px;">120 questions</p>
+            </div>
+            <i class="fas fa-chevron-right" style="color: #d1d5db;"></i>
+          </div>
+        </div>
+        <div class="card" style="margin: 0 0 12px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 40px; height: 40px; background: #fef3c7; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+              <i class="fas fa-flask" style="color: #d97706;"></i>
+            </div>
+            <div style="flex: 1;">
+              <p style="font-weight: 600; font-size: 14px;">Chemistry</p>
+              <p style="color: #9ca3af; font-size: 12px;">78 questions</p>
+            </div>
+            <i class="fas fa-chevron-right" style="color: #d1d5db;"></i>
+          </div>
+        </div>
+        <div class="card" style="margin: 0 0 12px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div style="width: 40px; height: 40px; background: #ede9fe; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+              <i class="fas fa-atom" style="color: #7c3aed;"></i>
+            </div>
+            <div style="flex: 1;">
+              <p style="font-weight: 600; font-size: 14px;">Physics</p>
+              <p style="color: #9ca3af; font-size: 12px;">50 questions</p>
+            </div>
+            <i class="fas fa-chevron-right" style="color: #d1d5db;"></i>
+          </div>
+        </div>
+      </div>
+
+      <nav class="bottom-nav">
+        <button onclick="navigate('home')"><i class="fas fa-home"></i><span>Home</span></button>
+        <button onclick="navigate('flashcards')"><i class="fas fa-layer-group"></i><span>Flashcards</span></button>
+        <button class="active" onclick="navigate('qbank')"><i class="fas fa-question-circle"></i><span>QBank</span></button>
+        <button onclick="navigate('notebooks')"><i class="fas fa-book-open"></i><span>Notebooks</span></button>
+        <button onclick="navigate('community')"><i class="fas fa-users"></i><span>Community</span></button>
+      </nav>
+    </div>
+
+    <!-- ==================== NOTEBOOKS SCREEN ==================== -->
+    <div id="screen-notebooks" class="screen">
+      <div class="safe-top" style="background: white; padding: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <h2 style="font-size: 20px; font-weight: 700;">Notebooks</h2>
+          <button style="background: #33bfff; color: white; border: none; border-radius: 10px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer;">
+            <i class="fas fa-plus" style="margin-right: 4px;"></i> New
+          </button>
+        </div>
+      </div>
+      <div class="page-content" style="background: #f5f5f5; padding: 16px;">
+        <!-- Search -->
+        <div style="position: relative; margin-bottom: 16px;">
+          <i class="fas fa-search" style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #9ca3af;"></i>
+          <input type="text" placeholder="Search notebooks..." style="width: 100%; padding: 12px 16px 12px 40px; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 14px; outline: none; background: white;" />
+        </div>
+
+        <div class="deck-card">
+          <div style="display: flex; align-items: start; gap: 12px;">
+            <div style="width: 40px; height: 40px; background: #dbeafe; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+              <i class="fas fa-book" style="color: #3b82f6;"></i>
+            </div>
+            <div>
+              <h4 style="font-weight: 600; font-size: 15px;">Biology Notes</h4>
+              <p style="color: #9ca3af; font-size: 12px;">12 pages · Updated today</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="deck-card">
+          <div style="display: flex; align-items: start; gap: 12px;">
+            <div style="width: 40px; height: 40px; background: #fef3c7; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+              <i class="fas fa-book" style="color: #d97706;"></i>
+            </div>
+            <div>
+              <h4 style="font-weight: 600; font-size: 15px;">Chemistry Formulas</h4>
+              <p style="color: #9ca3af; font-size: 12px;">8 pages · Updated yesterday</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="deck-card">
+          <div style="display: flex; align-items: start; gap: 12px;">
+            <div style="width: 40px; height: 40px; background: #ede9fe; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+              <i class="fas fa-book" style="color: #7c3aed;"></i>
+            </div>
+            <div>
+              <h4 style="font-weight: 600; font-size: 15px;">Physics - Mechanics</h4>
+              <p style="color: #9ca3af; font-size: 12px;">6 pages · Updated 3 days ago</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="deck-card">
+          <div style="display: flex; align-items: start; gap: 12px;">
+            <div style="width: 40px; height: 40px; background: #dcfce7; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+              <i class="fas fa-book" style="color: #16a34a;"></i>
+            </div>
+            <div>
+              <h4 style="font-weight: 600; font-size: 15px;">Math - Integration</h4>
+              <p style="color: #9ca3af; font-size: 12px;">15 pages · Updated last week</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <nav class="bottom-nav">
+        <button onclick="navigate('home')"><i class="fas fa-home"></i><span>Home</span></button>
+        <button onclick="navigate('flashcards')"><i class="fas fa-layer-group"></i><span>Flashcards</span></button>
+        <button onclick="navigate('qbank')"><i class="fas fa-question-circle"></i><span>QBank</span></button>
+        <button class="active" onclick="navigate('notebooks')"><i class="fas fa-book-open"></i><span>Notebooks</span></button>
+        <button onclick="navigate('community')"><i class="fas fa-users"></i><span>Community</span></button>
+      </nav>
+    </div>
+
+    <!-- ==================== COMMUNITY SCREEN ==================== -->
+    <div id="screen-community" class="screen">
+      <div class="safe-top" style="background: white; padding: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <h2 style="font-size: 20px; font-weight: 700;">Community</h2>
+          <button style="background: #33bfff; color: white; border: none; border-radius: 10px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer;">
+            <i class="fas fa-pen" style="margin-right: 4px;"></i> Post
+          </button>
+        </div>
+      </div>
+      <div class="page-content" style="background: #f5f5f5; padding: 16px;">
+        <div class="tab-bar">
+          <button class="active">Feed</button>
+          <button>Popular</button>
+          <button>My Posts</button>
+        </div>
+
+        <div class="community-post">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+            <div class="avatar">A</div>
+            <div>
+              <p style="font-weight: 600; font-size: 14px;">Ahmed K.</p>
+              <p style="color: #9ca3af; font-size: 11px;">2 hours ago</p>
+            </div>
+          </div>
+          <p style="font-size: 14px; color: #374151; line-height: 1.5;">Can someone explain the difference between mitosis and meiosis? I keep mixing them up in practice questions.</p>
+          <div style="display: flex; gap: 16px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f3f4f6;">
+            <button style="background: none; border: none; color: #9ca3af; font-size: 13px; cursor: pointer;"><i class="far fa-heart" style="margin-right: 4px;"></i> 12</button>
+            <button style="background: none; border: none; color: #9ca3af; font-size: 13px; cursor: pointer;"><i class="far fa-comment" style="margin-right: 4px;"></i> 8</button>
+            <button style="background: none; border: none; color: #9ca3af; font-size: 13px; cursor: pointer;"><i class="far fa-bookmark" style="margin-right: 4px;"></i> Save</button>
+          </div>
+        </div>
+
+        <div class="community-post">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+            <div class="avatar" style="background: #8b5cf6;">S</div>
+            <div>
+              <p style="font-weight: 600; font-size: 14px;">Sara M.</p>
+              <p style="color: #9ca3af; font-size: 11px;">5 hours ago</p>
+            </div>
+          </div>
+          <p style="font-size: 14px; color: #374151; line-height: 1.5;">Just scored 95% on my Chemistry quiz! The flashcard feature really helped me memorize the periodic table trends.</p>
+          <div style="display: flex; gap: 16px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f3f4f6;">
+            <button style="background: none; border: none; color: #9ca3af; font-size: 13px; cursor: pointer;"><i class="far fa-heart" style="margin-right: 4px;"></i> 34</button>
+            <button style="background: none; border: none; color: #9ca3af; font-size: 13px; cursor: pointer;"><i class="far fa-comment" style="margin-right: 4px;"></i> 15</button>
+            <button style="background: none; border: none; color: #9ca3af; font-size: 13px; cursor: pointer;"><i class="far fa-bookmark" style="margin-right: 4px;"></i> Save</button>
+          </div>
+        </div>
+
+        <div class="community-post">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
+            <div class="avatar" style="background: #10b981;">R</div>
+            <div>
+              <p style="font-weight: 600; font-size: 14px;">Rami T.</p>
+              <p style="color: #9ca3af; font-size: 11px;">1 day ago</p>
+            </div>
+          </div>
+          <p style="font-size: 14px; color: #374151; line-height: 1.5;">Sharing my Physics study notes for Newton's Laws. Hope it helps anyone preparing for the exam next week!</p>
+          <div style="display: flex; gap: 16px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f3f4f6;">
+            <button style="background: none; border: none; color: #9ca3af; font-size: 13px; cursor: pointer;"><i class="far fa-heart" style="margin-right: 4px;"></i> 56</button>
+            <button style="background: none; border: none; color: #9ca3af; font-size: 13px; cursor: pointer;"><i class="far fa-comment" style="margin-right: 4px;"></i> 22</button>
+            <button style="background: none; border: none; color: #9ca3af; font-size: 13px; cursor: pointer;"><i class="far fa-bookmark" style="margin-right: 4px;"></i> Save</button>
+          </div>
+        </div>
+      </div>
+
+      <nav class="bottom-nav">
+        <button onclick="navigate('home')"><i class="fas fa-home"></i><span>Home</span></button>
+        <button onclick="navigate('flashcards')"><i class="fas fa-layer-group"></i><span>Flashcards</span></button>
+        <button onclick="navigate('qbank')"><i class="fas fa-question-circle"></i><span>QBank</span></button>
+        <button onclick="navigate('notebooks')"><i class="fas fa-book-open"></i><span>Notebooks</span></button>
+        <button class="active" onclick="navigate('community')"><i class="fas fa-users"></i><span>Community</span></button>
+      </nav>
+    </div>
+
+  </div>
+
+  <script>
+    // Navigation
+    function navigate(screen) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById('screen-' + screen).classList.add('active');
+    }
+
+    // Login
+    function login() {
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      if (email === 'superadmin@studify.com' && password === 'AdminStudify.1') {
+        navigate('home');
+      } else {
+        alert('Invalid credentials. Use:\nEmail: superadmin@studify.com\nPassword: AdminStudify.1');
+      }
+    }
+
+    // Generate calendar strip
+    function generateCalendar() {
+      const strip = document.getElementById('calendar-strip');
+      const today = new Date();
+      const days = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
+      for (let i = -3; i <= 10; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() + i);
+        const isToday = i === 0;
+        const isPast = i < 0;
+
+        const item = document.createElement('div');
+        item.className = 'day-item' + (isToday ? ' today' : '');
+
+        if (isPast) {
+          item.innerHTML = `<div class="streak-dot"></div>`;
+        }
+        item.innerHTML += `
+          <span class="date">${d.getDate()}</span>
+          <span class="label">${days[d.getDay()]}</span>
+        `;
+        strip.appendChild(item);
+      }
+    }
+
+    generateCalendar();
+
+    // Register service worker for PWA
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js');
+    }
+  </script>
+</body>
+</html>

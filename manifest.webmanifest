@@ -1,0 +1,35 @@
+{
+  "name": "Studify",
+  "short_name": "Studify",
+  "description": "Your personalized study companion",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#33bfff",
+  "theme_color": "#33bfff",
+  "lang": "en",
+  "scope": "/",
+  "id": "/",
+  "orientation": "portrait",
+  "dir": "ltr",
+  "categories": ["education"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
